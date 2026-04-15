@@ -1,0 +1,26 @@
+{% extends "auth_base.html" %}
+{% block content %}
+    <div class="main-content">
+        <form method="post">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.csrf_token }}
+            </div>
+            <p class="form-element">
+                {{ form.user_name.label }} <span class="required-data">*</span>
+                {{ form.user_name(class="form-control", placeholder="Имя пользователя")}}
+                {% for err in form.user_name.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ err }}
+                    </p>
+                {% endfor %}
+            </p>
+
+            <p class="form-element">{{ form.submit(type="submit", class="btn submit-btn") }}</p>
+        </form>
+        <a href="/">
+            <button class="btn cancel-btn">Отмена</button>
+        </a>
+        <p class="error">{{ message }}</p>
+    </div>
+{% endblock %}

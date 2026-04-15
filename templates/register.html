@@ -1,0 +1,108 @@
+{% extends "auth_base.html" %}
+{% block content %}
+    <style>
+        .err-msg {
+            width: 100%;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        /* .reg-form {
+            margin: auto;
+            width: 15%;
+        } */
+
+        .auth-nav-bar .login-link:hover {
+            border-bottom: 3px solid rgba(0, 0, 0, 0.288);
+        }
+
+        .auth-nav-bar .reg-link {
+            border-bottom: 3px solid black;
+        }
+
+        /* .reg-link::before {
+            transition: all 0.4s ease-out;
+            content: "";
+            display: block;
+            width: 10%;
+            height: 4px;
+            background-color: black;
+            position: absolute;
+            bottom: 0;
+            left: -100%;
+        } */
+
+        /* .title {
+            width: 100%;
+            text-align: center;
+        } */
+    </style>
+
+    <div class="reg-form">
+        <!-- <h2 class="title">Регистрация</h2> -->
+        <form method="post">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.csrf_token }}
+            </div>
+            <div class="auth-nav-bar">
+                <a class="auth-nav-link reg-link" href="/register">Регистрация</a>
+                <a class="auth-nav-link login-link" href="/login">Вход</a>
+            </div>
+            <!-- <h2 class="title">Регистрация</h2> -->
+            <p class="form-element">
+                {{ form.user_name.label }} <span class="required-data">*</span><br>
+                {{ form.user_name(class="form-control", title="Уникальный тег пользователя") }}<br>
+                {% for error in form.user_name.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+            <p class="form-element">
+                {{ form.name.label }} <span class="required-data">*</span><br>
+                {{ form.name(class="form-control") }}<br>
+                {% for error in form.name.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+            <p class="form-element">
+                {{ form.surname.label }}<br>
+                {{ form.surname(class="form-control") }}<br>
+                {% for error in form.surname.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+            <p class="form-element">
+                {{ form.email.label }} <span class="required-data">*</span><br>
+                {{ form.email(class="form-control") }}<br>
+                {% for error in form.email.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+            <p class="form-element">
+                {{ form.password.label }} <span class="required-data">*</span><br>
+                {{ form.password(class="form-control") }}<br>
+                {% for error in form.password.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
+
+            <p class="form-element">{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+            <p class="form-element">{{ form.submit(type="submit", class="btn submit-btn") }}</p>
+            <p class="err-msg">{{message}}</p>
+
+            <p style="color: rgb(176, 176, 176); text-align: center;">
+                <span class="required-data">*</span> - обязательный параметр
+            </p>
+        </form>
+    </div>
+{% endblock %}

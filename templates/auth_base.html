@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+    </head>
+    <style>
+        /* html {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        } */
+
+        body {
+            margin: 0px;
+            font-family: Avantgarde, TeX Gyre Adventor, URW Gothic L, sans-serif;
+            font-size: smaller;
+            width: 100%;
+        }
+
+        .container {
+            width: 200px;
+            margin: auto;
+            margin-top: 10%;
+        }
+
+        .logo {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: auto;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            padding-left: 3%;
+            width: 110%;
+        }
+
+        .auth-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-bar h1, .auth-bar div {
+            margin: 0;
+        }
+
+        .btn {
+            padding: 7px;
+            background-color: black;
+            border: 0;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .cancel-btn, .submit-btn {
+            width: 100%;
+        }
+
+        .cancel-btn {
+            border: 2px inset black;
+            background-color: white;
+            color: black;
+        }
+
+        .cancel-btn:hover {
+            background-color: rgba(128, 128, 128, 0.21);
+        }
+
+        .required-data {
+            color: red;
+        }
+
+        .form-control {
+            width: 96%
+        }
+
+        .auth-nav-bar {
+            width: 100%;
+            display: flex;
+            /* justify-content: center; */
+        }
+
+        .auth-nav-bar a {
+            /* padding: 5px; */
+            width: 50%;
+            color: black;
+            border-bottom: 3px solid rgba(0, 0, 0, 0.13);
+            text-decoration: none;
+            text-align: center;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+    </style>
+    <body>
+        <main role="main" class="container">
+            <div class="logo">
+                <img src="static/images/logo.svg" alt="WindChat">
+            </div>
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+</html>

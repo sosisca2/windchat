@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+<style>
+    body {
+        margin: 0px;
+        font-family: Avantgarde, TeX Gyre Adventor, URW Gothic L, sans-serif;
+        font-size: smaller;
+    }
+
+    header {
+        /* padding: 10px; */
+        /* max-height: 35px; */
+        height: 50px;
+        /* background-color: rgba(224, 251, 243, 0.451); */
+        background-image: linear-gradient(0.15turn, rgba(203, 247, 234, 0.451), rgba(118, 205, 252, 0.666));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        /* box-shadow: inset 0px -4px 0px 4px rgba(0, 0, 0, 0.332); */
+    }
+
+    .nav-col {
+        margin: auto;
+        height: 100%;
+    }
+
+    .nav-element {
+        display: block;
+        height: 100%;
+        text-align: center;
+        color: black;
+        text-decoration: none;
+    }
+
+    .dropdown {
+        /* height: 100%; */
+        position: relative;
+        display: inline-block;
+        padding-left: 5px;
+        padding-right: 5px;
+        height: 100%;
+        text-align: center;
+    }
+
+    .dropdown-btn, .nav-element {
+        margin: 0;
+        height: max-content;
+        padding: 17px;
+        transition: background-color 0.1s ease-in-out;
+    }
+
+    .nav-element:hover {
+        background-color: rgba(204, 241, 230, 0.451);
+    }
+
+    .dropdown-content {
+        min-width: 200px;
+        /* width: 200px; */
+        height: max-content;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        right: 0;
+        display: none;
+        position: absolute;
+        align-items: center;
+        z-index: 1;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown-content img {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+    }
+
+    .nav-link {
+        text-align: left;
+        padding: 5px;
+        display: flex;
+        width: 200px;
+        color: black;
+        text-decoration: none;
+        align-items: center;
+        justify-content: left;
+    }
+
+    .dropdown-content .nav-link:hover {
+        background-color: rgb(246, 246, 246);
+        /* color: rgb(145, 145, 145); */
+        /* border-bottom: 1px solid rgb(206, 206, 206); */
+    }
+
+    .logo {
+        margin-left: 15px;
+        width: max-content;
+    }
+
+    .logo .logo-txt {
+        width: 30%
+    }
+
+    .link-arrow {
+        width: max-content;
+        margin-left: 25%;
+        /* width: max-content; */
+        /* height: max-content; */
+    }
+
+    .link-arrow img {
+        padding-top: 1px;
+        width: 7px;
+    }
+
+    .main-nav {
+        position: relative;
+        right: 15px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+</style>
+<body>
+    {% if not current_user.is_authenticated %}
+        <!-- <script>
+            var split_link = window.location.href.split("/")
+            var page = split_link[split_link.length - 1]
+
+            if (page == "" || page == "index") {
+                window.location.href = "/register"
+            }
+        </script> -->
+    {% else %}
+        <header>
+            <div class="logo">
+                <img class="logo-txt" src="static/images/logo-txt.svg" alt="WindChat">
+            </div>
+            <nav class="nav-bar main-nav">
+                <div class="home-page nav-col">
+                    <a class="nav-element" href="/">Главная</a>
+                </div>
+                <div class="user-info nav-col">
+                    <div class="dropdown">
+                        <p class="dropdown-btn nav-element">{{current_user.name}}</p>
+                        <div class="dropdown-content">
+                            <a class="nav-link" href="/login">
+                                <img src="static/images/change-user.svg" alt="">
+                                Сменить аккаунт
+                                <span class="link-arrow">
+                                    <img src="static/images/link-arrow.svg" alt="">
+                                </span>
+                            </a>
+                            <a class="nav-link" href="/logout">
+                                <img src="static/images/logout.svg" alt="">
+                                Выйти
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+    {% endif %}
+    <main role="main" class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
