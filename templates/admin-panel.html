@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+        <link rel="stylesheet" href="/static/style/admin-panel_style.css">
+        <script src="/static/scripts/admins-panel.js"></script>
+    </head>
+    <body>
+        <main role="main">
+            <div class="container">
+                <h1 class="panel-element welcome-msg">Добро пожаловать, <span>{{ user["name"] }}</span></h1>
+                <div class="panel-element info-panel">
+                    <div class="info-item register-users">
+                        <span class="title">Пользователей зарегистрировано:</span>
+                        <h1 class="content">{{ data["register_users"] }}</h1>
+                    </div>
+                    <div class="info-item chats-created">
+                        <span class="title">Чатов создано:</span>
+                        <h1 class="content">{{ data["chats_created"] }}</h1>
+                    </div>
+                </div>
+                <div class="control-panel">
+                    <div class="panel-element panel-btn" onclick="openHiddenPanel('usersListPanel')">
+                        <span class="title">Список пользователей</span>
+                    </div>
+                    <div class="panel-element panel-btn" onclick="openHiddenPanel('')">
+                        <span class="title">Список чатов</span>
+                    </div>
+                    <div class="panel-element panel-btn" onclick="openHiddenPanel('')">
+                        <span class="title">Список сообщений</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <main class="hidden-table users-list" role="table" id="usersListPanel">
+            <div class="hide-panel-btn" onclick="closeHiddenPanel('usersListPanel')">
+                <img src="/static/images/close-btn.svg" alt="Закрыть">
+            </div>
+            <div class="hidden-table-container">
+                <div class="hidden-table-content users-list">
+                    <div class="hidden-table-header">
+                        <div class="left-cell header-cell id">ID</div>
+                        <div class="header-cell user-name">UserName</div>
+                        <div class="header-cell name">Name</div>
+                        <div class="header-cell surname">Surname</div>
+                        <div class="header-cell chats">Chats</div>
+                        <div class="header-cell email">Email</div>
+                        <div class="right-cell header-cell modified-date">Modified Date</div>
+                    </div>
+                    <div class="table-rows">
+                        {% for user in data["users_list"] %}
+                            <div class="table-row user-info">
+                                <div class="table-item id">{{ user.id }}</div>
+                                <div class="table-item user-name">{{ user.user_name }}</div>
+                                <div class="table-item name">{{ user.name }}</div>
+                                <div class="table-item surname">{{ user.surname }}</div>
+                                <div class="table-item chats">{{ user.chats["chats"] }}</div>
+                                <div class="table-item email">{{ user.email }}</div>
+                                <div class="table-item modified-date">{{ user.modified_date.date() }}</div>
+                                <div class=""></div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </body>
+</html>

@@ -1,3 +1,5 @@
+import json
+
 from waitress import serve
 
 from flask import Flask, render_template, redirect, request
@@ -142,6 +144,30 @@ def logout():
     return redirect("/login")
 
 
+@app.route("/admin-panel/<login>/<password>", methods=["GET", "POST"])
+def admin_panel(login: str, password: str):
+    with open(config.ADMINS_FILE) as f:
+        admins = json.load(f)["admins"]
+
+    if login not in admins.keys() or admins[login]["password"] != password:
+        return "Invalid login or password"
+
+    data = {}
+    db_sess = db_session.create_session()
+
+    data["register_users"] = db_sess.query(Users).count()
+    data["chats_created"] = db_sess.query(Chats).count()
+
+    data["users_list"] = db_sess.query(Users).all()
+    data["chats_list"] = db_sess.query(Chats).all()
+
+    return render_template("admin-panel.html", title=config.APP_NAME + " | Панель администратора",
+                           user=admins[login], data=data)
+
+# import datetime
+
+# datetime.datetime.date().strftime("%d/%m/%Y, %H:%M:%S")
+
 def main():
     db_session.global_init(config.DB_PATH)
 
@@ -153,8 +179,8 @@ def main():
     api.add_resource(MessagesResource, '/api/messages/<int:msg_id>')
     api.add_resource(MessagesNewResource, '/api/messages/new/<int:chat_id>')
 
-    # app.run(debug=True)
-    serve(app, host="0.0.0.0", port="5000")
+    app.run(debug=True)
+    # serve(app, host="0.0.0.0", port="5000")
 
 
 if __name__ == "__main__":
