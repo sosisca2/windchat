@@ -14,11 +14,11 @@ function createChatsFromPromise(data) {
     for (i = 0; i < userChats.length; i++) {
         const chat = userChats[i];
 
-        if (chats.includes(chat)) {
+        if (chats.includes(chat["id"])) {
             continue;
         }
 
-        chats.push(chat);
+        chats.push(chat["id"]);
 
         const chatBtn = document.createElement("div");
         chatBtn.id = "chatBtn" + chat["id"];
@@ -61,7 +61,7 @@ function loadChatsFromServer() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
+        console.log("Chats updated!");
         createChatsFromPromise(data);
     })
     .catch(error => console.error('Ошибка:', error));
