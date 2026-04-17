@@ -2,8 +2,70 @@ const chatMessagesApiURL = "/api/chats/messages";
 const apiKey = "y28qS1JlSKapp0ekse4si08lY7vYgv928Vvlsd7yFrjW0xBZ";
 const messagesApiURL = "/api/messages";
 const newMessagesApiURL = "/api/messages/new";
+const usersApiURL = "/api/users";
+const userChatsApiURL = "/api/users/chats";
 
 var current_chat = "";
+var userId = "";
+var chats = [];
+
+function createChatsFromPromise(data) {
+    const userChats = data["chats"];
+    for (i = 0; i < userChats.length; i++) {
+        const chat = userChats[i];
+
+        if (chats.includes(chat)) {
+            continue;
+        }
+
+        chats.push(chat);
+
+        const chatBtn = document.createElement("div");
+        chatBtn.id = "chatBtn" + chat["id"];
+        chatBtn.classList.add("chat-btn");
+        chatBtn.onclick = () => openChat(chat["id"]);
+
+        const iconImage = document.createElement("img");
+        iconImage.src = "static/images/chat-default.svg";
+        iconImage.alt = "";
+
+        const chatIcon = document.createElement("div");
+        chatIcon.classList.add("chat-icon");
+        chatIcon.appendChild(iconImage);
+        chatBtn.append(chatIcon);
+
+        const chatInfo = document.createElement("div");
+        chatInfo.classList.add("chat-info");
+
+        const chatName = document.createElement("div");
+        chatName.appendChild(document.createTextNode(chat["name"]));
+        chatName.classList.add("chat-name");
+        chatInfo.appendChild(chatName);
+
+        const lastMsg = document.createElement("div");
+        lastMsg.classList.add("last-msg");
+        lastMsg.appendChild(document.createTextNode(chat["lastMessage"]));
+        chatInfo.appendChild(lastMsg);
+
+        chatBtn.appendChild(chatInfo);
+
+        const chatsArea = document.getElementById("chatsArea");
+        chatsArea.append(chatBtn);
+    }
+}
+
+function loadChatsFromServer() {
+    fetch(userChatsApiURL + "/" + userId, {
+        method: 'get',
+        headers: { 'Content-Type': 'application/json' },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        createChatsFromPromise(data);
+    })
+    .catch(error => console.error('Ошибка:', error));
+}
 
 function scrollCurrentChatMessages() {
     const scrollArea = document.getElementById("msgArea" + current_chat);

@@ -15,9 +15,9 @@ from data.users import Users
 from data.chats import Chats
 from data.messages import Messages
 
-from data.chats_resource import ChatsResource, ChatsListResource
-from data.messages_resource import (MessagesResource, MessagesChatResource,
-                                    MessagesNewResource, MessagesListResource)
+from data.chats_resource import *
+from data.messages_resource import *
+from data.users_resource import *
 
 import config
 
@@ -178,6 +178,10 @@ def main():
     api.add_resource(MessagesListResource, '/api/messages')
     api.add_resource(MessagesResource, '/api/messages/<int:msg_id>')
     api.add_resource(MessagesNewResource, '/api/messages/new/<int:chat_id>')
+
+    api.add_resource(UsersListResource, '/api/users')
+    api.add_resource(UsersResource, '/api/users/<int:user_id>')
+    api.add_resource(UsersChatsResource, '/api/users/chats/<int:user_id>')
 
     app.run(debug=True)
     # serve(app, host="0.0.0.0", port="5000")

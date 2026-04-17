@@ -6,30 +6,18 @@
     <link rel="stylesheet" href="static/style/index_style.css">
 
     <div class="main-content">
-        <div class="chats-area">
+        <div class="chats-area" id="chatsArea">
             <a class="create-chat-area" href="/add-chat">
                 <img src="static/images/add-chat.svg" alt="" class="img add-chat-img">
                 <span class="text-content">
                     Добавить чат
                 </span>
             </a>
-            {% for chat in chats %}
-                <div class="chat-btn" id="chatBtn{{ chat.id }}" onclick="openChat('{{ chat.id }}')">
-                    <div class="chat-icon">
-                        <img src="static/images/chat-default.svg" alt="">
-                    </div>
-                    <div class="chat-info">
-                        <div class="chat-name">
-                            {{chat["name"]}}
-                        </div>
-                        {% if chat["messages"].__len__() > 0 %}
-                            <div class="last-msg">
-                                {{ chat["messages"][-1].data }}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+            <script>
+                userId = "{{ current_user.id }}";
+                loadChatsFromServer();
+                setInterval(loadChatsFromServer, 10);
+            </script>
         </div>
         <div class="msg-area">
             {% for chat in chats %}

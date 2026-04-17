@@ -8,5 +8,4 @@ class Chats(SqlAlchemyBase, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
-    messages = sqlalchemy.Column(sqlalchemy.JSON)
     users = sqlalchemy.Column(sqlalchemy.JSON)
