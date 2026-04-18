@@ -83,7 +83,6 @@ function openChat(chatId) {
     }
 
     current_chat = chatId;
-    console.log(current_chat);
     document.getElementById("sendMsgArea").style.display = "flex";
     document.getElementById("msgArea" + chatId).style.display = "flow-root";
     document.getElementById("chatHeader" + current_chat).style.display = "block";
@@ -120,8 +119,11 @@ function createMessage(chatId, data, time, ownerId, currentUserId) {
     msgArea.append(newMessage);
 }
 
-function createMessagesFromPromise(data, chatId, currentUserId) {
-    console.log("Messages loaded!", messages);
+function createMessagesFromPromise(data, chatId, currentUserId, callback = null) {
+    if (data["messages"].length == 0) {
+        return;
+    }
+
     for (i = 0; i < data["messages"].length; i++) {
         msg = data["messages"][i];
 
@@ -133,7 +135,9 @@ function createMessagesFromPromise(data, chatId, currentUserId) {
         messages[chatId].push(msg["id"]);
     };
 
-    scrollCurrentChatMessages();
+    console.log("Messages loaded!", messages);
+
+    if (callback != null) {callback()}
 }
 
 function sendMessageToServer(user_id, event = null) {
@@ -164,13 +168,13 @@ function sendMessageToServer(user_id, event = null) {
     })
     .then(response => response.json())
     .then(data => {
-        loadNewMessagesFromServer(null, user_id);
+        loadNewMessagesFromServer(null, user_id, scrollCurrentChatMessages);
         msgDataInput.value = "";
     })
     .catch(error => console.error('Ошибка:', error));
 }
 
-function loadNewMessagesFromServer(chat, user) {
+function loadNewMessagesFromServer(chat, user, callback = null) {
     const chatId = chat ? chat : current_chat;
     const currentUser = user ? user: userId;
 
@@ -184,7 +188,7 @@ function loadNewMessagesFromServer(chat, user) {
     })
     .then(response => response.json())
     .then(data => {
-        createMessagesFromPromise(data, chatId, currentUser);
+        createMessagesFromPromise(data, chatId, currentUser, callback);
         lastMsg = data["messages"][data["messages"].length - 1]["data"];
         document.getElementById("lastMsg" + chatId).textContent = lastMsg;
         // readAllMessagesInChat();

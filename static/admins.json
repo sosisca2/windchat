@@ -4,6 +4,11 @@
             "password": "2310_@step",
             "name": "Stepan",
             "surname": "Novikov"
+        },
+        "test": {
+            "password": "123",
+            "name": "Test",
+            "surname": "Test"
         }
     }
 }

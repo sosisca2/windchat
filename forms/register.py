@@ -11,6 +11,7 @@ class RegisterForm(FlaskForm):
     surname = StringField("Ваша фамилия", description="По желанию")
     email = EmailField("Ваша почта", validators=[DataRequired()])
     password = PasswordField("Пароль", validators=[DataRequired()])
+    password_again = PasswordField("Повторите пароль", validators=[DataRequired()])
 
     remember_me = BooleanField("Запомнить меня")
 

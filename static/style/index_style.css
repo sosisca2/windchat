@@ -87,7 +87,9 @@ body {
 .msg-area {
     width: 55%;
     height: 100%;
-    background-color: rgb(242, 251, 242);
+    /* background-color: rgb(242, 251, 242); */
+    background:
+        linear-gradient(45deg, rgb(163, 219, 223) 10px, rgb(195, 223, 195));
     display: flow-root;
 }
 
@@ -158,7 +160,7 @@ body {
 }
 
 .owner-msg {
-    background-color: rgb(232, 236, 239);
+    background-color: rgb(229, 252, 234);
     margin-left: auto;
     margin-right: 10px;
 }

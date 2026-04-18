@@ -95,6 +95,15 @@
                     </p>
                 {% endfor %}
             </p>
+            <p class="form-element">
+                {{ form.password_again.label }} <span class="required-data">*</span><br>
+                {{ form.password_again(class="form-control") }}<br>
+                {% for error in form.password_again.errors %}
+                    <p class="err-msg" role="alert">
+                        {{ error }}
+                    </p>
+                {% endfor %}
+            </p>
 
             <p class="form-element">{{ form.remember_me() }} {{ form.remember_me.label }}</p>
             <p class="form-element">{{ form.submit(type="submit", class="btn submit-btn") }}</p>

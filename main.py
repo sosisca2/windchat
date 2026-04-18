@@ -83,6 +83,10 @@ def register():
     form = RegisterForm()
 
     if form.submit.data:
+        if form.password != form.password_again:
+            return render_template("register.html", title=f"{config.APP_NAME} | Регистрация",
+                                   form=form, message=f"Пароли не совпадают")
+
         db_sess = db_session.create_session()
 
         if db_sess.query(Users).filter(Users.user_name == form.user_name.data).first():
@@ -168,7 +172,13 @@ def admin_panel(login: str, password: str):
 
 # datetime.datetime.date().strftime("%d/%m/%Y, %H:%M:%S")
 
+def format_app_info(version_path: str = None) -> str:
+    return f"Setup {config.APP_NAME} (version: {config.VERSION}" +\
+           f"{"-" + version_path if version_path else ""})"
+
+
 def main():
+    print(format_app_info("0.1"))
     db_session.global_init(config.DB_PATH)
 
     api.add_resource(ChatsListResource, '/api/chats')
@@ -183,13 +193,12 @@ def main():
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
     api.add_resource(UsersChatsResource, '/api/users/chats/<int:user_id>')
 
-    # app.run(debug=True)
-    serve(app, host="0.0.0.0", port="5000")
+    app.run(debug=True)
+    # serve(app, host="0.0.0.0", port="5000")
 
 
 if __name__ == "__main__":
     try:
-        print("Setup \"WindChat\".\nVersion: 1.0.0b-0.1")
         main()
     except Exception as e:
         print(f"Error: {e.__class__}", e.__traceback__.tb_frame)
