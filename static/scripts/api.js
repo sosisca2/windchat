@@ -8,6 +8,7 @@ const userChatsApiURL = "/api/users/chats";
 var current_chat = "";
 var userId = "";
 var chats = [];
+var messages = {}
 
 function createChatsFromPromise(data) {
     const userChats = data["chats"];
@@ -19,6 +20,7 @@ function createChatsFromPromise(data) {
         }
 
         chats.push(chat["id"]);
+        messages[chat["id"]] = [];
 
         const chatBtn = document.createElement("div");
         chatBtn.id = "chatBtn" + chat["id"];
@@ -44,6 +46,7 @@ function createChatsFromPromise(data) {
 
         const lastMsg = document.createElement("div");
         lastMsg.classList.add("last-msg");
+        lastMsg.id = "lastMsg" + chat["id"];
         lastMsg.appendChild(document.createTextNode(chat["lastMessage"]));
         chatInfo.appendChild(lastMsg);
 
@@ -80,6 +83,7 @@ function openChat(chatId) {
     }
 
     current_chat = chatId;
+    console.log(current_chat);
     document.getElementById("sendMsgArea").style.display = "flex";
     document.getElementById("msgArea" + chatId).style.display = "flow-root";
     document.getElementById("chatHeader" + current_chat).style.display = "block";
@@ -117,10 +121,16 @@ function createMessage(chatId, data, time, ownerId, currentUserId) {
 }
 
 function createMessagesFromPromise(data, chatId, currentUserId) {
-    console.log(data["messages"])
+    console.log("Messages loaded!", messages);
     for (i = 0; i < data["messages"].length; i++) {
         msg = data["messages"][i];
+
+        if (messages[chatId].includes(msg["id"])) {
+            continue;
+        }
+
         createMessage(chatId, msg["data"], msg["time"], msg["owner"], currentUserId);
+        messages[chatId].push(msg["id"]);
     };
 
     scrollCurrentChatMessages();
@@ -154,24 +164,30 @@ function sendMessageToServer(user_id, event = null) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data);
         loadNewMessagesFromServer(null, user_id);
-        // document.getElementById("msgArea" + current_chat).scrollTop = 100;
         msgDataInput.value = "";
     })
     .catch(error => console.error('Ошибка:', error));
 }
 
-function loadNewMessagesFromServer(chatId, currentUserId) {
-    chatId = this.chatId ? this.chatId : current_chat
+function loadNewMessagesFromServer(chat, user) {
+    const chatId = chat ? chat : current_chat;
+    const currentUser = user ? user: userId;
+
+    if (chatId == "" || currentUser == "") {
+        return
+    }
+
     fetch(newMessagesApiURL + "/" + chatId, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     })
     .then(response => response.json())
     .then(data => {
-        createMessagesFromPromise(data, chatId, currentUserId);
-        readAllMessagesInChat();
+        createMessagesFromPromise(data, chatId, currentUser);
+        lastMsg = data["messages"][data["messages"].length - 1]["data"];
+        document.getElementById("lastMsg" + chatId).textContent = lastMsg;
+        // readAllMessagesInChat();
     })
     .catch(error => console.error('Ошибка:', error));
 }

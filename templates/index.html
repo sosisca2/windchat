@@ -16,7 +16,6 @@
             <script>
                 userId = "{{ current_user.id }}";
                 loadChatsFromServer();
-                setInterval(loadChatsFromServer, 5000);
             </script>
         </div>
         <div class="msg-area">
@@ -40,4 +39,8 @@
         <div class="chat-info-area">
         </div>
     </div>
+    <script>
+        setInterval(loadChatsFromServer, 5000);
+        setInterval(loadNewMessagesFromServer, 5000);
+    </script>
 {% endblock %}
