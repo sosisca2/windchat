@@ -54,6 +54,8 @@ function createChatsFromPromise(data) {
 
         const chatsArea = document.getElementById("chatsArea");
         chatsArea.append(chatBtn);
+
+        loadMessages(chat["id"], userId);
     }
 }
 
