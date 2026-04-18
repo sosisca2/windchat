@@ -193,8 +193,8 @@ def main():
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
     api.add_resource(UsersChatsResource, '/api/users/chats/<int:user_id>')
 
-    app.run(debug=True)
-    # serve(app, host="0.0.0.0", port="5000")
+    # app.run(debug=True)
+    serve(app, host="0.0.0.0", port="5000")
 
 
 if __name__ == "__main__":
