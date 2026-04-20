@@ -5,22 +5,62 @@ const newMessagesApiURL = "/api/messages/new";
 const usersApiURL = "/api/users";
 const userChatsApiURL = "/api/users/chats";
 
-var current_chat = "";
+var currentChat = {};
 var userId = "";
+var userData = {};
+var userChats = [];
+var createdChats = []
 var chats = [];
-var messages = {}
+var chatsMessages = [];
+var createdMessages = [];
+var data = {};
 
-function createChatsFromPromise(data) {
-    const userChats = data["chats"];
+function loadUserChats() {
+    userChats = [];
+    for (let chatIndex of Object.keys(chats)) {
+        chat = chats[chatIndex];
+        chatUsers = chat["users"]["users"];
+
+        if (chatUsers.includes(parseInt(userId))) {
+            const anotherUserId = chatUsers.filter(uid => uid != userId)[0];
+            chat["name"] = data["users"][anotherUserId]["user_name"];
+
+            const chatMessages = Object.values(data["messages"]).filter(msg => msg["chat_id"] == chat["id"]);
+            chat["lastMessage"] = chatMessages.at(-1)["data"];
+            userChats.push(chat);
+        }
+    }
+}
+
+function loadData(responseData) {
+    data = responseData;
+    userData = responseData["users"][userId];
+    chats = responseData["chats"];
+
+    loadUserChats();
+    for (let msgIndex of Object.keys(responseData["messages"])) {
+        msg = responseData["messages"][msgIndex];
+
+        console.log(userChats)
+
+        if (Object.keys(userChats).includes(msg.chatId)) {
+            chatsMessages.push(msg);
+        }
+    }
+}
+
+function createChatsFromData() {
+    loadUserChats();
+
     for (i = 0; i < userChats.length; i++) {
         const chat = userChats[i];
 
-        if (chats.includes(chat["id"])) {
+        if (createdChats.includes(chat["id"])) {
             continue;
         }
 
-        chats.push(chat["id"]);
-        messages[chat["id"]] = [];
+        createdChats.push(chat["id"]);
+        createdMessages[chat["id"]] = [];
 
         const chatBtn = document.createElement("div");
         chatBtn.id = "chatBtn" + chat["id"];
@@ -54,90 +94,115 @@ function createChatsFromPromise(data) {
 
         const chatsArea = document.getElementById("chatsArea");
         chatsArea.append(chatBtn);
-
-        loadMessages(chat["id"], userId);
     }
 }
 
-function loadChatsFromServer() {
-    fetch(userChatsApiURL + "/" + userId, {
-        method: 'get',
-        headers: { 'Content-Type': 'application/json' },
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Chats updated!");
-        createChatsFromPromise(data);
-    })
-    .catch(error => console.error('Ошибка:', error));
-}
+// function loadChatsFromData(data) {
+//     fetch(userChatsApiURL + "/" + userId, {
+//         method: 'get',
+//         headers: { 'Content-Type': 'application/json' },
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         console.log("Chats updated!");
+//         createChatsFromPromise(data);
+//     })
+//     .catch(error => console.error('Ошибка:', error));
+// }
 
 function scrollCurrentChatMessages() {
-    const scrollArea = document.getElementById("msgArea" + current_chat);
+    const scrollArea = document.getElementById("msgArea" + currentChat.id);
     scrollArea.scrollBy(0, scrollArea.scrollHeight);
 }
 
 function openChat(chatId) {
-    if (current_chat != "") {
+    if (Object.keys(currentChat).length != 0) {
         document.getElementById("sendMsgArea").style.display = "none";
-        document.getElementById("msgArea" + current_chat).style.display = "none";
-        document.getElementById("chatHeader" + current_chat).style.display = "none";
+        document.getElementById("msgArea" + currentChat.id).style.display = "none";
+        document.getElementById("chatHeader" + currentChat.id).style.display = "none";
     }
 
-    current_chat = chatId;
+    currentChat = chats[chatId];
     document.getElementById("sendMsgArea").style.display = "flex";
-    document.getElementById("msgArea" + chatId).style.display = "flow-root";
-    document.getElementById("chatHeader" + current_chat).style.display = "block";
+    document.getElementById("msgArea" + currentChat.id).style.display = "flow-root";
+    document.getElementById("chatHeader" + currentChat.id).style.display = "block";
 
     scrollCurrentChatMessages();
 }
 
-function createMessage(chatId, data, time, ownerId, currentUserId) {
-    const formatted_time = time.split(" ")[1].split(":");
+// function createMessage(chatId, msgId, currentUserId) {
+//     msg = data["messages"][msgId];
+//     const formatted_time = msg["time"].split(" ")[1].split(":");
 
-    newMessage = document.createElement("div");
+//     newMessage = document.createElement("div");
 
-    if (ownerId == currentUserId) {
-        newMessage.classList.add("msg", "owner-msg");
-    } else {
-        newMessage.classList.add("msg");
-    }
+//     if (ownerId == currentUserId) {
+//         newMessage.classList.add("msg", "owner-msg");
+//     } else {
+//         newMessage.classList.add("msg");
+//     }
 
-    content = document.createElement("div");
-    content.classList.add("msg-content");
-    newMessage.appendChild(content)
+//     content = document.createElement("div");
+//     content.classList.add("msg-content");
+//     newMessage.appendChild(content)
 
-    msgText = document.createElement("span");
-    msgText.classList.add("msg-text");
-    msgText.appendChild(document.createTextNode(data));
-    content.appendChild(msgText);
+//     msgText = document.createElement("span");
+//     msgText.classList.add("msg-text");
+//     msgText.appendChild(document.createTextNode(msg["data"]));
+//     content.appendChild(msgText);
 
-    msgTime = document.createElement("span");
-    msgTime.appendChild(document.createTextNode(formatted_time[0] + ":" + formatted_time[1]));
-    msgTime.classList.add("msg-time");
-    content.appendChild(msgTime);
+//     msgTime = document.createElement("span");
+//     msgTime.appendChild(document.createTextNode(formatted_time[0] + ":" + formatted_time[1]));
+//     msgTime.classList.add("msg-time");
+//     content.appendChild(msgTime);
 
-    msgArea = document.getElementById("msgArea" + chatId);
-    msgArea.append(newMessage);
-}
+//     msgArea = document.getElementById("msgArea" + chatId);
+//     msgArea.append(newMessage);
+// }
 
-function createMessagesFromPromise(data, chatId, currentUserId, callback = null) {
-    if (data["messages"].length == 0) {
+function createMessagesFromData(callback = null) {
+    if (chatsMessages.length == 0) {
         return;
     }
 
-    for (i = 0; i < data["messages"].length; i++) {
-        msg = data["messages"][i];
+    for (i = 0; i < chatsMessages.length; i++) {
+        const msg = chatsMessages[i];
 
-        if (messages[chatId].includes(msg["id"])) {
+        if (createdMessages[chatId].includes(msg["id"])) {
             continue;
         }
 
-        createMessage(chatId, msg["data"], msg["time"], msg["owner"], currentUserId);
-        messages[chatId].push(msg["id"]);
+        const formatted_time = msg["time"].split(" ")[1].split(":");
+
+        newMessage = document.createElement("div");
+
+        if (msg["owner"] == currentUserId) {
+            newMessage.classList.add("msg", "owner-msg");
+        } else {
+            newMessage.classList.add("msg");
+        }
+
+        content = document.createElement("div");
+        content.classList.add("msg-content");
+        newMessage.appendChild(content)
+
+        msgText = document.createElement("span");
+        msgText.classList.add("msg-text");
+        msgText.appendChild(document.createTextNode(msg["data"]));
+        content.appendChild(msgText);
+
+        msgTime = document.createElement("span");
+        msgTime.appendChild(document.createTextNode(formatted_time[0] + ":" + formatted_time[1]));
+        msgTime.classList.add("msg-time");
+        content.appendChild(msgTime);
+
+        msgArea = document.getElementById("msgArea" + msg["chat_id"]);
+        msgArea.append(newMessage);
+
+        createdMessages[msg["chat_id"]].push(msg["id"]);
     };
 
-    console.log("Messages loaded!", messages);
+    console.log("Messages loaded!", createdMessages);
 
     if (callback != null) {callback()}
 }
@@ -155,7 +220,7 @@ function sendMessageToServer(user_id, event = null) {
         return
     }
 
-    if (current_chat == "") {
+    if (currentChat == "") {
         return
     }
 
@@ -163,7 +228,7 @@ function sendMessageToServer(user_id, event = null) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            chat_id: current_chat,
+            chat_id: currentChat,
             owner: user_id,
             data: msgDataInput.value
         })
@@ -177,7 +242,7 @@ function sendMessageToServer(user_id, event = null) {
 }
 
 function loadNewMessagesFromServer(chat, user, callback = null) {
-    const chatId = chat ? chat : current_chat;
+    const chatId = chat ? chat : currentChat;
     const currentUser = user ? user: userId;
 
     if (chatId == "" || currentUser == "") {
@@ -199,7 +264,7 @@ function loadNewMessagesFromServer(chat, user, callback = null) {
 }
 
 function readAllMessagesInChat(chatId) {
-    fetch(newMessagesApiURL + "/" + (chatId ? chatId : current_chat), {
+    fetch(newMessagesApiURL + "/" + (chatId ? chatId : currentChat), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })

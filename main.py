@@ -1,8 +1,9 @@
 import json
+import time
 
 from waitress import serve
 
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, Response, request_finished
 from flask_login import LoginManager, login_user, logout_user, current_user
 from flask_restful import Api
 
@@ -33,7 +34,9 @@ login_manager.init_app(app)
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
-    return db_sess.get(Users, user_id)
+    user = db_sess.get(Users, user_id)
+    db_sess.close()
+    return user
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -42,21 +45,24 @@ def index():
     if not current_user.is_authenticated:
         return redirect("/register")
 
-    db_sess = db_session.create_session()
-    user_chats = db_sess.query(Users).filter(Users.id == current_user.id).first().chats
+    try:
+        db_sess = db_session.create_session()
+        user_chats = db_sess.query(Users).filter(Users.id == current_user.id).first().chats
 
-    chats = []
-    for chat_id in user_chats["chats"]:
-        chat = db_sess.query(Chats).filter(Chats.id == chat_id).first()
+        chats = []
+        for chat_id in user_chats["chats"]:
+            chat = db_sess.query(Chats).filter(Chats.id == chat_id).first()
 
-        users = chat.users["users"]
-        chats.append({
-            "id": chat.id,
-            "name": db_sess.query(Users).filter(Users.id.in_(users), Users.id != current_user.id).first().name,
-            "users": users,
-            "messages": sorted(db_sess.query(Messages).filter(Messages.chat_id == chat.id).all(),
-                               key=lambda msg: msg.time)
-        })
+            users = chat.users["users"]
+            chats.append({
+                "id": chat.id,
+                "name": db_sess.query(Users).filter(Users.id.in_(users), Users.id != current_user.id).first().name,
+                "users": users,
+                "messages": sorted(db_sess.query(Messages).filter(Messages.chat_id == chat.id).all(),
+                                key=lambda msg: msg.time)
+            })
+    finally:
+        db_sess.close()
 
     return render_template("index.html", title=config.APP_NAME, chats=chats)
 
@@ -69,6 +75,7 @@ def login():
         db_sess = db_session.create_session()
 
         user = db_sess.query(Users).filter(Users.user_name == form.user_name.data).first()
+        db_sess.close()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
@@ -103,6 +110,7 @@ def register():
 
         db_sess.add(new_user)
         db_sess.commit()
+        db_sess.close()
         # login_user(new_user, form.remember_me.data)
         return redirect("/login")
     return render_template("register.html", title=f"{config.APP_NAME} | Регистрация", form=form)
@@ -138,7 +146,10 @@ def add_chat():
         }})
 
         db_sess.commit()
+        db_sess.close()
         return redirect("/")
+
+    db_sess.close()
     return render_template("add-chat.html", title=config.APP_NAME + "| Добавление чата", form=form)
 
 
@@ -165,16 +176,60 @@ def admin_panel(login: str, password: str):
     data["users_list"] = db_sess.query(Users).all()
     data["chats_list"] = db_sess.query(Chats).all()
 
+    db_sess.close()
+
     return render_template("admin-panel.html", title=config.APP_NAME + " | Панель администратора",
                            user=admins[login], data=data)
 
-# import datetime
 
-# datetime.datetime.date().strftime("%d/%m/%Y, %H:%M:%S")
+def generate_db_data():
+    while True:
+        db_sess = db_session.create_session()
+        chats = db_sess.query(Chats).all()
+        users = db_sess.query(Users).all()
+        messages = db_sess.query(Messages).all()
+        db_sess.close()
+
+        # response = {
+        #     "chats": {chat.to_dict() for chat in chats},
+        #     "users": [user.to_dict() for user in users],
+        #     "messages": [msg.to_dict(only=("chat_id", "owner", "data", "time")) for msg in messages]
+        # }
+        response = {
+            "chats": {},
+            "users": {},
+            "messages": {}
+        }
+
+        for chat in chats:
+            response["chats"][chat.id] = chat.to_dict()
+
+        for user in users:
+            response["users"][user.id] = user.to_dict()
+
+        for msg in messages:
+            response["messages"][msg.id] = msg.to_dict(only=("chat_id", "owner", "data", "time"))
+
+        response = f"data: {json.dumps(response)}\n\n"
+
+        yield response
+
+        # while request. not in ("POST", "PUT"):
+        time.sleep(5)
+
+
+@app.route("/event-stream")
+def data_stream():
+    api_key = request.args["apikey"]
+
+    if api_key != config.APP_API_KEY:
+        return jsonify({"response": "Invalid api key"})
+    return Response(generate_db_data(), mimetype="text/event-stream")
+
 
 def format_app_info(version_path: str = None) -> str:
-    return f"Setup {config.APP_NAME} (version: {config.VERSION}" +\
-           f"{"-" + version_path if version_path else ""})"
+    suffix = f"{"-" + version_path if version_path else ""})"
+    return f"Setup {config.APP_NAME} (version: {config.VERSION}{suffix}"
 
 
 def main():
@@ -193,8 +248,8 @@ def main():
     api.add_resource(UsersResource, '/api/users/<int:user_id>')
     api.add_resource(UsersChatsResource, '/api/users/chats/<int:user_id>')
 
-    # app.run(debug=True)
-    serve(app, host="0.0.0.0", port="5000")
+    app.run(debug=True)
+    # serve(app, host="0.0.0.0", port="5000")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 <!--    <script src="static/scripts/messagesAPI.js"></script>-->
 <!--    <script src="static/scripts/chatsAPI.js"></script>-->
     <script src="static/scripts/api.js"></script>
+    <!-- <script src="static/scripts/eventSource.js"></script> -->
     <link rel="stylesheet" href="static/style/index_style.css">
 
     <div class="main-content">
@@ -13,21 +14,13 @@
                     Добавить чат
                 </span>
             </a>
-            <script>
-                userId = "{{ current_user.id }}";
-                loadChatsFromServer();
-            </script>
         </div>
         <div class="msg-area">
             {% for chat in chats %}
                 <div class="chat-header" id="chatHeader{{ chat.id }}" style="display: none;">
-                    {{chat["name"]}}
+                    {{ chat["name"] }}
                 </div>
-                <div class="chat-messages" id="msgArea{{ chat.id }}">
-                    <script>
-                        loadMessages("{{ chat.id }}", "{{ current_user.id }}");
-                    </script>
-                </div>
+                <div class="chat-messages" id="msgArea{{ chat.id }}"></div>
             {% endfor %}
             <div class="send-msg-area" id="sendMsgArea" style="display: none;">
                 <input type="text" class="msg-input" id="msgDataInput" placeholder="Сообщение..." onkeypress="sendMessageToServer('{{ current_user.id }}', event)">
@@ -36,11 +29,29 @@
                 </button>
             </div>
         </div>
-        <div class="chat-info-area">
-        </div>
+        <div class="chat-info-area"></div>
     </div>
     <script>
-        setInterval(loadChatsFromServer, 5000);
-        setInterval(loadNewMessagesFromServer, 5000);
+        function setup(responseJson) {
+            userId = "{{ current_user.id }}";
+            loadData(responseJson);
+            createChatsFromData();
+            createMessagesFromData()
+        }
+
+        const AppAPIKey = "y28qS1JlSKapp0ekse4si08lY7vYgv928Vvlsd7yFrjW0xBZ";
+        const eventSource = new EventSource('/event-stream?apikey=' + AppAPIKey);
+
+        eventSource.onmessage = function (event) {
+            setup(JSON.parse(event.data));
+        }
+
+        eventSource.onerror = function (error) {
+            console.error('EventSource failed:', error);
+            eventSource.close();
+        }
+
+        // setInterval(loadChatsFromServer, 5000);
+        // setInterval(loadNewMessagesFromServer, 5000);
     </script>
 {% endblock %}

@@ -196,7 +196,7 @@ main {
     margin-bottom: 20px;
     border-radius: 15px;
     box-shadow: 4px 4px 10px -2px var(--btn-shadow);
-    animation: panel-shadow-animation 5s ease-in-out infinite;
+    /* animation: panel-shadow-animation 5s ease-in-out infinite; */
 }
 
 .welcome-msg {

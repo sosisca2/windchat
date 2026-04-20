@@ -19,6 +19,7 @@ class ChatsResource(Resource):
     def get(self, chat_id):
         db_sess = db_session.create_session()
         chat = db_sess.get(Chats, chat_id)
+        db_sess.close()
         return jsonify(chat.to_dict())
 
     def put(self, chat_id):
@@ -31,13 +32,15 @@ class ChatsResource(Resource):
             Chats.users: args[2] if args[2] else Chats.users,
         })
         db_sess.commit()
-        return jsonify({"updated_chat": db_sess.get(Chats, chat_id)})
+
+        return jsonify({"updated_chat": chat_id})
 
 
 class ChatsListResource(Resource):
     def get(self):
         db_sess = db_session.create_session()
         chats = db_sess.query(Chats).all()
+        db_sess.close()
         return jsonify({"chats": [item.to_dict() for item in chats]})
 
     def post(self):
@@ -50,4 +53,5 @@ class ChatsListResource(Resource):
         )
         db_sess.add(chat)
         db_sess.commit()
+
         return jsonify({"id": chat.id})
