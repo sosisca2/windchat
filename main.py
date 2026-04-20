@@ -51,15 +51,16 @@ def index():
 
         chats = []
         for chat_id in user_chats["chats"]:
-            chat = db_sess.query(Chats).filter(Chats.id == chat_id).first()
+            chat = db_sess.get(Chats, chat_id)
 
-            users = chat.users["users"]
+            print(chat_id)
+            chat_users = chat.users["users"]
             chats.append({
                 "id": chat.id,
-                "name": db_sess.query(Users).filter(Users.id.in_(users), Users.id != current_user.id).first().name,
-                "users": users,
+                "name": db_sess.query(Users).filter(Users.id.in_(chat_users), Users.id != current_user.id).first().name,
+                "users": chat_users,
                 "messages": sorted(db_sess.query(Messages).filter(Messages.chat_id == chat.id).all(),
-                                key=lambda msg: msg.time)
+                                   key=lambda msg: msg.time)
             })
     finally:
         db_sess.close()
@@ -128,8 +129,18 @@ def add_chat():
             return render_template("add-chat.html", title=config.APP_NAME + " | Добавление чата",
                                    form=form, message=f"Пользователь: \"{form.user_name.data}\" не найден.")
 
+        if user.id == current_user.id:
+            return render_template("add-chat.html", title=config.APP_NAME + " | Добавление чата",
+                                   form=form, message=f"Вы не можете создать чат с самим собой")
+
+        chat_users = {"users": sorted([user.id, current_user.id])}
+
+        if db_sess.query(Chats).filter(Chats.users == chat_users).all():
+            return render_template("add-chat.html", title=config.APP_NAME + " | Добавление чата",
+                                   form=form, message=f"У вас уже есть чат с пользователем: \"{form.user_name.data}\"")
+
         chat = Chats(
-            users={"users": [user.id, current_user.id]}
+            users=chat_users
         )
         db_sess.add(chat)
 
@@ -190,11 +201,6 @@ def generate_db_data():
         messages = db_sess.query(Messages).all()
         db_sess.close()
 
-        # response = {
-        #     "chats": {chat.to_dict() for chat in chats},
-        #     "users": [user.to_dict() for user in users],
-        #     "messages": [msg.to_dict(only=("chat_id", "owner", "data", "time")) for msg in messages]
-        # }
         response = {
             "chats": {},
             "users": {},
@@ -208,7 +214,7 @@ def generate_db_data():
             response["users"][user.id] = user.to_dict()
 
         for msg in messages:
-            response["messages"][msg.id] = msg.to_dict(only=("chat_id", "owner", "data", "time"))
+            response["messages"][msg.id] = msg.to_dict(only=("id", "chat_id", "owner", "data", "time"))
 
         response = f"data: {json.dumps(response)}\n\n"
 
@@ -220,20 +226,23 @@ def generate_db_data():
 
 @app.route("/event-stream")
 def data_stream():
+    if "apikey" not in request.args.keys():
+        return jsonify({"message": "Incorrect url params"})
+
     api_key = request.args["apikey"]
 
     if api_key != config.APP_API_KEY:
-        return jsonify({"response": "Invalid api key"})
+        return jsonify({"message": "Invalid api key"})
     return Response(generate_db_data(), mimetype="text/event-stream")
 
 
 def format_app_info(version_path: str = None) -> str:
-    suffix = f"{"-" + version_path if version_path else ""})"
+    suffix = f"{'-' + version_path if version_path else ''})"
     return f"Setup {config.APP_NAME} (version: {config.VERSION}{suffix}"
 
 
 def main():
-    print(format_app_info("0.1"))
+    print(format_app_info("02 event-stream"))
     db_session.global_init(config.DB_PATH)
 
     api.add_resource(ChatsListResource, '/api/chats')

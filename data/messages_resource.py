@@ -66,4 +66,4 @@ class MessagesListResource(Resource):
         db_sess.add(msg)
         db_sess.commit()
 
-        return jsonify({"id": msg.id})
+        return jsonify({"newMessage": msg.to_dict(only=("id", "chat_id", "owner", "data", "time"))})

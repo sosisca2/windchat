@@ -11,12 +11,12 @@ var userData = {};
 var userChats = [];
 var createdChats = []
 var chats = [];
-var chatsMessages = [];
-var createdMessages = [];
+var chatsMessages = {};
+var createdMessages = {};
 var data = {};
 
 function loadUserChats() {
-    userChats = [];
+    userChats = {};
     for (let chatIndex of Object.keys(chats)) {
         chat = chats[chatIndex];
         chatUsers = chat["users"]["users"];
@@ -27,7 +27,8 @@ function loadUserChats() {
 
             const chatMessages = Object.values(data["messages"]).filter(msg => msg["chat_id"] == chat["id"]);
             chat["lastMessage"] = chatMessages.at(-1)["data"];
-            userChats.push(chat);
+            userChats[parseInt(chat["id"])] = chat;
+            chatsMessages[parseInt(chat["id"])] = [];
         }
     }
 }
@@ -41,19 +42,17 @@ function loadData(responseData) {
     for (let msgIndex of Object.keys(responseData["messages"])) {
         msg = responseData["messages"][msgIndex];
 
-        console.log(userChats)
-
-        if (Object.keys(userChats).includes(msg.chatId)) {
-            chatsMessages.push(msg);
+        if (Object.keys(userChats).includes(msg["chat_id"].toString())) {
+            chatsMessages[parseInt(msg["chat_id"])].push(msg);
         }
     }
 }
 
 function createChatsFromData() {
-    loadUserChats();
 
-    for (i = 0; i < userChats.length; i++) {
-        const chat = userChats[i];
+    const userChatsArray = Object.values(userChats);
+    for (i = 0; i < userChatsArray.length; i++) {
+        const chat = userChatsArray[i];
 
         if (createdChats.includes(chat["id"])) {
             continue;
@@ -97,20 +96,10 @@ function createChatsFromData() {
     }
 }
 
-// function loadChatsFromData(data) {
-//     fetch(userChatsApiURL + "/" + userId, {
-//         method: 'get',
-//         headers: { 'Content-Type': 'application/json' },
-//     })
-//     .then(response => response.json())
-//     .then(data => {
-//         console.log("Chats updated!");
-//         createChatsFromPromise(data);
-//     })
-//     .catch(error => console.error('Ошибка:', error));
-// }
-
 function scrollCurrentChatMessages() {
+    if (Object.keys(currentChat).length == 0) {
+        return;
+    }
     const scrollArea = document.getElementById("msgArea" + currentChat.id);
     scrollArea.scrollBy(0, scrollArea.scrollHeight);
 }
@@ -130,43 +119,13 @@ function openChat(chatId) {
     scrollCurrentChatMessages();
 }
 
-// function createMessage(chatId, msgId, currentUserId) {
-//     msg = data["messages"][msgId];
-//     const formatted_time = msg["time"].split(" ")[1].split(":");
-
-//     newMessage = document.createElement("div");
-
-//     if (ownerId == currentUserId) {
-//         newMessage.classList.add("msg", "owner-msg");
-//     } else {
-//         newMessage.classList.add("msg");
-//     }
-
-//     content = document.createElement("div");
-//     content.classList.add("msg-content");
-//     newMessage.appendChild(content)
-
-//     msgText = document.createElement("span");
-//     msgText.classList.add("msg-text");
-//     msgText.appendChild(document.createTextNode(msg["data"]));
-//     content.appendChild(msgText);
-
-//     msgTime = document.createElement("span");
-//     msgTime.appendChild(document.createTextNode(formatted_time[0] + ":" + formatted_time[1]));
-//     msgTime.classList.add("msg-time");
-//     content.appendChild(msgTime);
-
-//     msgArea = document.getElementById("msgArea" + chatId);
-//     msgArea.append(newMessage);
-// }
-
-function createMessagesFromData(callback = null) {
-    if (chatsMessages.length == 0) {
+function createMessagesFromData(chatId, callback) {
+    if (chatsMessages[chatId].length == 0) {
         return;
     }
 
-    for (i = 0; i < chatsMessages.length; i++) {
-        const msg = chatsMessages[i];
+    for (i = 0; i < chatsMessages[chatId].length; i++) {
+        const msg = chatsMessages[chatId][i];
 
         if (createdMessages[chatId].includes(msg["id"])) {
             continue;
@@ -176,7 +135,7 @@ function createMessagesFromData(callback = null) {
 
         newMessage = document.createElement("div");
 
-        if (msg["owner"] == currentUserId) {
+        if (msg["owner"] == userId) {
             newMessage.classList.add("msg", "owner-msg");
         } else {
             newMessage.classList.add("msg");
@@ -204,7 +163,10 @@ function createMessagesFromData(callback = null) {
 
     console.log("Messages loaded!", createdMessages);
 
-    if (callback != null) {callback()}
+    if (callback != null) {
+        callback();
+        console.log(1)
+    }
 }
 
 function sendMessageToServer(user_id, event = null) {
@@ -228,57 +190,59 @@ function sendMessageToServer(user_id, event = null) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            chat_id: currentChat,
+            chat_id: currentChat["id"],
             owner: user_id,
             data: msgDataInput.value
         })
     })
     .then(response => response.json())
     .then(data => {
-        loadNewMessagesFromServer(null, user_id, scrollCurrentChatMessages);
+//        loadNewMessagesFromServer(null, user_id, scrollCurrentChatMessages);
+        chatsMessages[currentChat["id"]].push(data["newMessage"]);
+        createMessagesFromData(currentChat["id"], scrollCurrentChatMessages);
         msgDataInput.value = "";
     })
     .catch(error => console.error('Ошибка:', error));
 }
 
-function loadNewMessagesFromServer(chat, user, callback = null) {
-    const chatId = chat ? chat : currentChat;
-    const currentUser = user ? user: userId;
+//function loadNewMessagesFromServer(chat, user, callback = null) {
+//    const chatId = chat ? chat : currentChat;
+//    const currentUser = user ? user: userId;
+//
+//    if (chatId == "" || currentUser == "") {
+//        return
+//    }
+//
+//    fetch(newMessagesApiURL + "/" + chatId, {
+//        method: 'GET',
+//        headers: { 'Content-Type': 'application/json' }
+//    })
+//    .then(response => response.json())
+//    .then(data => {
+//        createMessagesFromPromise(data, chatId, currentUser, callback);
+//        lastMsg = data["messages"][data["messages"].length - 1]["data"];
+//        document.getElementById("lastMsg" + chatId).textContent = lastMsg;
+//        // readAllMessagesInChat();
+//    })
+//    .catch(error => console.error('Ошибка:', error));
+//}
 
-    if (chatId == "" || currentUser == "") {
-        return
-    }
-
-    fetch(newMessagesApiURL + "/" + chatId, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        createMessagesFromPromise(data, chatId, currentUser, callback);
-        lastMsg = data["messages"][data["messages"].length - 1]["data"];
-        document.getElementById("lastMsg" + chatId).textContent = lastMsg;
-        // readAllMessagesInChat();
-    })
-    .catch(error => console.error('Ошибка:', error));
-}
-
-function readAllMessagesInChat(chatId) {
-    fetch(newMessagesApiURL + "/" + (chatId ? chatId : currentChat), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error('Ошибка:', error));
-}
-
-function loadMessages(chatId, currentUserId) {
-    fetch(chatMessagesApiURL + "/" + chatId, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => createMessagesFromPromise(data, chatId, currentUserId))
-    .catch(error => console.error("Ошибка:", error))
-}
+//function readAllMessagesInChat(chatId) {
+//    fetch(newMessagesApiURL + "/" + (chatId ? chatId : currentChat), {
+//        method: 'POST',
+//        headers: { 'Content-Type': 'application/json' }
+//    })
+//    .then(response => response.json())
+//    .then(data => console.log(data))
+//    .catch(error => console.error('Ошибка:', error));
+//}
+//
+//function loadMessages(chatId, currentUserId) {
+//    fetch(chatMessagesApiURL + "/" + chatId, {
+//        method: 'GET',
+//        headers: { 'Content-Type': 'application/json' }
+//    })
+//    .then(response => response.json())
+//    .then(data => createMessagesFromPromise(data, chatId, currentUserId))
+//    .catch(error => console.error("Ошибка:", error))
+//}
