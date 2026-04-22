@@ -21,6 +21,10 @@ function loadUserChats() {
         chat = chats[chatIndex];
         chatUsers = chat["users"]["users"];
 
+        if (Object.keys(userChats).includes(parseInt(chat["id"]))) {
+            continue;
+        }
+
         if (chatUsers.includes(parseInt(userId))) {
             const anotherUserId = chatUsers.filter(uid => uid != userId)[0];
             chat["name"] = data["users"][anotherUserId]["user_name"];
@@ -28,6 +32,8 @@ function loadUserChats() {
             const chatMessages = Object.values(data["messages"]).filter(msg => msg["chat_id"] == chat["id"]);
             if (chatMessages.length > 0) {
                 chat["lastMessage"] = chatMessages.at(-1)["data"];
+            } else {
+                chat["lastMessage"] = "";
             }
             userChats[parseInt(chat["id"])] = chat;
             chatsMessages[parseInt(chat["id"])] = [];
@@ -41,6 +47,7 @@ function loadData(responseData) {
     chats = responseData["chats"];
 
     loadUserChats();
+    createChatsFromData();
     for (let msgIndex of Object.keys(responseData["messages"])) {
         msg = responseData["messages"][msgIndex];
 
@@ -51,7 +58,6 @@ function loadData(responseData) {
 }
 
 function createChatsFromData() {
-
     const userChatsArray = Object.values(userChats);
     for (i = 0; i < userChatsArray.length; i++) {
         const chat = userChatsArray[i];

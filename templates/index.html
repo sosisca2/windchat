@@ -32,7 +32,6 @@
         function setup(responseJson) {
             userId = "{{ current_user.id }}";
             loadData(responseJson);
-            createChatsFromData();
 
             for (let chat of Object.values(userChats)) {
                 createMessagesFromData(chat.id);
