@@ -116,7 +116,7 @@ def register():
         db_sess.add(new_user)
         db_sess.commit()
 
-        login_user(new_user, form.remember_me.data)
+        login_user(new_user, remember=form.remember_me.data)
 
         db_sess.close()
 

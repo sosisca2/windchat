@@ -26,7 +26,9 @@ function loadUserChats() {
             chat["name"] = data["users"][anotherUserId]["user_name"];
 
             const chatMessages = Object.values(data["messages"]).filter(msg => msg["chat_id"] == chat["id"]);
-            chat["lastMessage"] = chatMessages.at(-1)["data"];
+            if (chatMessages.length > 0) {
+                chat["lastMessage"] = chatMessages.at(-1)["data"];
+            }
             userChats[parseInt(chat["id"])] = chat;
             chatsMessages[parseInt(chat["id"])] = [];
         }
