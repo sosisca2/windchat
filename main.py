@@ -36,8 +36,6 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-new_db_data = {}
-
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
@@ -116,7 +114,6 @@ def register():
         new_user.set_password(form.password.data)
 
         db_sess.add(new_user)
-        new_db_data["users"][new_user.id] = new_user.to_dict()
 
         db_sess.commit()
         db_sess.close()
@@ -165,7 +162,6 @@ def add_chat():
             "chats": db_sess.get(Users, user.id).chats["chats"] + [chat.id]
         }})
 
-        new_db_data["chats"][chat.id] = chat.to_dict()
         db_sess.commit()
         db_sess.close()
         return redirect("/")
@@ -243,7 +239,7 @@ def data_stream():
         return jsonify({"message": "Invalid api key"})
 
     def generate():
-        global new_db_data
+        # global new_db_data
         try:
             while True:
                 yield f"data: {json.dumps(get_current_db_data())}\n\n"
