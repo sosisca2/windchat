@@ -1,5 +1,5 @@
 #!/bin/bash
-cd windchat
+# cd windchat
 export PORT=5000
 unset PIP_USER
 
@@ -10,7 +10,7 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate
-source venv/bin/activate
+source venv/Scripts/activate
 
 # Try install (might fail if pip is broken, but packages should be there from packager_tool)
 if [ -f "requirements.txt" ]; then
