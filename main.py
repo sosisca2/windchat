@@ -1,9 +1,11 @@
 import json
 import time
+import threading
 
 from waitress import serve
 
-from flask import Flask, render_template, redirect, request, Response, request_finished
+from flask import (Flask, render_template, redirect,
+                   request, Response, request_finished, jsonify)
 from flask_login import LoginManager, login_user, logout_user, current_user
 from flask_restful import Api
 
@@ -16,20 +18,25 @@ from data.users import Users
 from data.chats import Chats
 from data.messages import Messages
 
-from data.chats_resource import *
-from data.messages_resource import *
-from data.users_resource import *
+from data.chats_resource import ChatsListResource, ChatsResource
+from data.messages_resource import (MessagesChatResource, MessagesListResource,
+                                    MessagesResource, MessagesNewResource)
+from data.users_resource import UsersChatsResource, UsersListResource, UsersResource
 
 import config
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "2sda091h23j09asd12kn"
+app.config["SECRET_KEY"] = "2sda091h23j09asd12kna13nfk23jaf1alfs9067asf"
+app.config["CACHE_TYPE"] = "Redis"
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300
+app.config["CACHE_THRESHOLD"] = 10000
 
 api = Api(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+new_db_data = {}
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -53,7 +60,6 @@ def index():
         for chat_id in user_chats["chats"]:
             chat = db_sess.get(Chats, chat_id)
 
-            print(chat_id)
             chat_users = chat.users["users"]
             chats.append({
                 "id": chat.id,
@@ -91,7 +97,7 @@ def register():
     form = RegisterForm()
 
     if form.submit.data:
-        if form.password != form.password_again:
+        if form.password.data != form.password_again.data:
             return render_template("register.html", title=f"{config.APP_NAME} | Регистрация",
                                    form=form, message=f"Пароли не совпадают")
 
@@ -110,10 +116,13 @@ def register():
         new_user.set_password(form.password.data)
 
         db_sess.add(new_user)
+        new_db_data["users"][new_user.id] = new_user.to_dict()
+
         db_sess.commit()
         db_sess.close()
-        # login_user(new_user, form.remember_me.data)
-        return redirect("/login")
+
+        login_user(new_user, form.remember_me.data)
+        return redirect("/")
     return render_template("register.html", title=f"{config.APP_NAME} | Регистрация", form=form)
 
 
@@ -156,6 +165,7 @@ def add_chat():
             "chats": db_sess.get(Users, user.id).chats["chats"] + [chat.id]
         }})
 
+        new_db_data["chats"][chat.id] = chat.to_dict()
         db_sess.commit()
         db_sess.close()
         return redirect("/")
@@ -193,35 +203,33 @@ def admin_panel(login: str, password: str):
                            user=admins[login], data=data)
 
 
-def generate_db_data():
-    while True:
-        db_sess = db_session.create_session()
+# def send_update_to_all_clients(data):
+#     with sse_lock:
+#         clients_to_notify = list(sse_clients)
+
+#     for client_id in clients_to_notify:
+#         try:
+            
+
+
+def get_current_db_data():
+    db_sess = db_session.create_session()
+    try:
         chats = db_sess.query(Chats).all()
         users = db_sess.query(Users).all()
         messages = db_sess.query(Messages).all()
-        db_sess.close()
 
         response = {
-            "chats": {},
-            "users": {},
-            "messages": {}
+            "chats": {chat.id: chat.to_dict() for chat in chats},
+            "users": {user.id: user.to_dict() for user in users},
+            "messages": {
+                msg.id: msg.to_dict(only=("id", "chat_id", "owner", "data", "time"))
+                for msg in messages
+            }
         }
-
-        for chat in chats:
-            response["chats"][chat.id] = chat.to_dict()
-
-        for user in users:
-            response["users"][user.id] = user.to_dict()
-
-        for msg in messages:
-            response["messages"][msg.id] = msg.to_dict(only=("id", "chat_id", "owner", "data", "time"))
-
-        response = f"data: {json.dumps(response)}\n\n"
-
-        yield response
-
-        # while request. not in ("POST", "PUT"):
-        time.sleep(5)
+        return response
+    finally:
+        db_sess.close()
 
 
 @app.route("/event-stream")
@@ -233,7 +241,33 @@ def data_stream():
 
     if api_key != config.APP_API_KEY:
         return jsonify({"message": "Invalid api key"})
-    return Response(generate_db_data(), mimetype="text/event-stream")
+
+    def generate():
+        global new_db_data
+        try:
+            while True:
+                yield f"data: {json.dumps(get_current_db_data())}\n\n"
+                time.sleep(5)
+            # if new_db_data == {}:
+            #     initial_data = get_current_db_data()
+            #     print("Load init")
+            #     new_db_data = initial_data
+            #     yield f"data: {json.dumps(initial_data)}\n\n"
+
+            # while True:
+            #     for new_chat in _new_db_chats.values():
+            #         new_db_data["chats"][new_chat["id"]] = new_chat
+            #     for new_msg in _new_db_messages.values():
+            #         new_db_data["messages"][new_msg["id"]] = new_msg
+            #     _new_db_chats.clear()
+            #     _new_db_messages.clear()
+
+            #     yield f"data: {json.dumps(new_db_data)}\n\n"
+            #     time.sleep(5)
+        except Exception as e:
+            print("Error in SSE stream:", e)
+
+    return Response(generate(), mimetype="text/event-stream")
 
 
 def format_app_info(version_path: str = None) -> str:
@@ -258,7 +292,7 @@ def main():
     api.add_resource(UsersChatsResource, '/api/users/chats/<int:user_id>')
 
     # app.run(debug=True)
-    serve(app, host="0.0.0.0", port="5000")
+    serve(app, host="0.0.0.0", port="5000", threads=100)
 
 
 if __name__ == "__main__":
