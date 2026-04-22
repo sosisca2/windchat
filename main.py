@@ -114,11 +114,12 @@ def register():
         new_user.set_password(form.password.data)
 
         db_sess.add(new_user)
-
         db_sess.commit()
-        db_sess.close()
 
         login_user(new_user, form.remember_me.data)
+
+        db_sess.close()
+
         return redirect("/")
     return render_template("register.html", title=f"{config.APP_NAME} | Регистрация", form=form)
 
